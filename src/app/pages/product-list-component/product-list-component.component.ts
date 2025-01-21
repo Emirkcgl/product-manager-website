@@ -10,7 +10,7 @@ import { Product } from 'src/app/shared/models/product';
 })
 export class ProductListComponentComponent implements OnInit {
   constructor(private messageService: MessageService, private confirmationService: ConfirmationService) {}
-  selectedProducts: any[] = [];
+  selectedProducts!: Product[] | null;
   submitted: boolean = false;
   productDialog: boolean = false;
   product!: Product;
@@ -395,18 +395,24 @@ export class ProductListComponentComponent implements OnInit {
   }
 
   deleteSelectedProducts() {
-    // Seçili ürünleri silme mantığı
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete the selected products?',
+      header: 'Confirm',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.products = this.products.filter(product => !this.selectedProducts?.includes(product));
+        this.selectedProducts = null;
+        this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
+      },
+    });
   }
 
   editProduct(product: any) {
-    // Ürün düzenleme mantığı
     this.product = { ...product };
     this.productDialog = true;
   }
 
   deleteProduct(product: any) {
-    // Tek ürün silme mantığı
-
     this.confirmationService.confirm({
       message: 'Are you sure you want to delete ' + product.name + '?',
       header: 'Confirm',
@@ -437,11 +443,13 @@ export class ProductListComponentComponent implements OnInit {
       this.products.push(this.product);
       this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Created', life: 3000 });
     }
+    this.products = [...this.products];
     this.productDialog = false;
+    this.product = {};
   }
 
-  getSeverity(product: any): string {
-    switch (product.inventoryStatus) {
+  getSeverity(status: string): string {
+    switch (status) {
       case 'INSTOCK':
         return 'success';
       case 'LOWSTOCK':
@@ -449,7 +457,7 @@ export class ProductListComponentComponent implements OnInit {
       case 'OUTOFSTOCK':
         return 'danger';
       default:
-        return '';
+        return 'info';
     }
   }
 
