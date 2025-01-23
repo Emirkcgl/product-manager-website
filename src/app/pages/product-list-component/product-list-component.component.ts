@@ -10,19 +10,20 @@ import { Product } from 'src/app/shared/models/product';
   styleUrls: ['./product-list-component.component.scss'],
 })
 export class ProductListComponentComponent implements OnInit {
-  constructor(private messageService: MessageService, private confirmationService: ConfirmationService, private productService: ProductServiceService) {}
   selectedProducts!: Product[] | null;
-  submitted: boolean = false;
-  productDialog: boolean = false;
+  submitted = false;
+  productDialog = false;
   product!: Product;
-  statuses!: any[];
+  statuses!: { label: string; value: string }[];
   products: Product[] = [];
-  updatedFields!: Partial<Product>;
+
   @ViewChild('dt') dt!: Table;
 
+  constructor(private messageService: MessageService, private confirmationService: ConfirmationService, private productService: ProductServiceService) {}
+
   ngOnInit(): void {
-    this.productService.products$.subscribe(product => {
-      this.products = product;
+    this.productService.products$.subscribe(productList => {
+      this.products = productList;
     });
 
     this.statuses = [
@@ -33,7 +34,7 @@ export class ProductListComponentComponent implements OnInit {
   }
 
   openNew() {
-    this.product = {};
+    this.product = {} as Product; // ensure type consistency
     this.submitted = false;
     this.productDialog = true;
   }
@@ -43,36 +44,45 @@ export class ProductListComponentComponent implements OnInit {
       message: 'Are you sure you want to delete the selected products?',
       header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
-
       accept: () => {
         if (this.selectedProducts?.length) {
-          const selectedIds = this.selectedProducts.map(product => product.id);
-          console.log(selectedIds);
+          const selectedIds = this.selectedProducts.map(p => p.id);
           this.productService.selectedDelete(selectedIds);
           this.selectedProducts = null;
-          this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Successful',
+            detail: 'Products Deleted',
+            life: 3000,
+          });
         }
       },
     });
   }
 
-  editProduct(product: any) {
+  editProduct(product: Product) {
     this.product = { ...product };
     this.productDialog = true;
   }
 
   deleteProduct(product: any) {
     this.confirmationService.confirm({
-      message: 'Are you sure you want to delete ' + product.name + '?',
+      message: `Are you sure you want to delete ${product.name}?`,
       header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.productService.deleteProduct(product.id);
-        this.product = {};
-        this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
+        this.product = {} as Product;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Successful',
+          detail: 'Product Deleted',
+          life: 3000,
+        });
       },
     });
   }
+
   hideDialog() {
     this.productDialog = false;
     this.submitted = false;
@@ -83,15 +93,25 @@ export class ProductListComponentComponent implements OnInit {
 
     if (this.product.id) {
       this.productService.updateProduct(this.product);
-      this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Updated', life: 3000 });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Successful',
+        detail: 'Product Updated',
+        life: 3000,
+      });
     } else {
       this.product.id = this.createId();
       this.productService.addProduct(this.product);
-      this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Created', life: 3000 });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Successful',
+        detail: 'Product Created',
+        life: 3000,
+      });
     }
 
     this.productDialog = false;
-    this.product = {};
+    this.product = {} as Product;
   }
 
   getSeverity(status: string): string {
@@ -109,8 +129,8 @@ export class ProductListComponentComponent implements OnInit {
 
   createId(): string {
     let id = '';
-    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (var i = 0; i < 5; i++) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 5; i++) {
       id += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return id;
